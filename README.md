@@ -1,2 +1,2 @@
-### Supermon2-Mod-for-Supermon-7.4 ###
+### Weather Info In Node Tables Mod ###
 This is the weather node table update for Supermon 7.4 like you see in the Supermon2 Node Tables
