@@ -1,0 +1,517 @@
+From e2433de61281c5268fd702d51c8be701bda24926 Mon Sep 17 00:00:00 2001
+From: Jory Pratt <anarchy@gentoo.org>
+Date: Sun, 6 Apr 2025 19:05:50 -0500
+Subject: [PATCH] port setvar commands to supermon from supermon2, remove 
+ duplicate information from dashboard. You must edit node_info.ini and 
+ AutoSky.ini
+
+Required to display information
+nano -w /usr/local/sbin/node_info.ini
+
+Only required if you want alerts displayed with clickable link
+nano -w /usr/local/bin/AUTOSKY/AutoSky.ini
+
+Signed-off-by: Jory Pratt <anarchy@gentoo.org>
+---
+ usr/local/sbin/ast_var_update.sh | 200 +++++++++++++++++++++++++++++++
+ usr/local/sbin/node_info.ini     |  42 +++++++
+ var/www/html/supermon/link.php   |  78 ++++++------
+ var/www/html/supermon/server.php |  88 +++++++++++---
+ 4 files changed, 356 insertions(+), 52 deletions(-)
+ create mode 100755 usr/local/sbin/ast_var_update.sh
+ create mode 100644 usr/local/sbin/node_info.ini
+
+diff --git a/usr/local/sbin/ast_var_update.sh b/usr/local/sbin/ast_var_update.sh
+new file mode 100755
+index 0000000..26ef575
+--- /dev/null
++++ b/usr/local/sbin/ast_var_update.sh
+@@ -0,0 +1,200 @@
++#!/bin/bash
++
++# ==============================================================================
++# SCRIPT: ast_var_update.sh
++# VERSION: 1.7 (April 6, 2025)
++# AUTHOR: Jory A. Pratt
++# DESCRIPTION:
++#   This script updates various AllstarLink node variables on the local server
++#   using the `rpt set variable` Asterisk command. It gathers information
++#   such as system uptime, CPU load, CPU temperature, weather conditions,
++#   and log disk usage. The registration check and display have been removed
++#   in this version. It also displays any active AutoSky weather alerts (if
++#   AutoSky is installed and configured). The system update check has been
++#   removed in this version.
++#
++# CONFIGURATION:
++#   The script reads its primary configuration from the 'node_info.ini' file
++#   located in the same directory as this script. This file contains settings
++#   for the Allstar nodes to update, weather information, and the preferred
++#   temperature unit.
++#
++# USAGE:
++#   1. Ensure the script has execute permissions: `chmod +x ast_var_update.sh`
++#   2. Create a 'node_info.ini' file in the same directory with your configuration.
++#   3. Run the script: `./ast_var_update.sh`
++#
++# CONFIGURATION FILE (node_info.ini) EXAMPLE:
++#   NODE="546051 546055 546056"       # Space-separated list of Allstar node numbers
++#   WX_CODE="77511"                 # Weather code (Zip, Airport, w-wunderground)
++#   WX_LOCATION="Alvin, Tx"           # Location description for weather
++#   TEMP_UNIT=F                     # Preferred temperature unit (C or F)
++#
++# NOTES:
++#   - The script assumes the existence of the `rpt.conf` file in `/etc/asterisk/`.
++#   - CPU temperature retrieval relies on `/usr/local/sbin/cpu-temp` or
++#     `/sys/class/thermal/thermal_zone0/temp`.
++#   - Weather information retrieval relies on `/usr/local/sbin/weather.pl` or
++#     `/usr/local/sbin/weather.sh`.
++#   - AutoSky alert functionality depends on AutoSky being installed and the
++#     'Alert_ini' variable pointing to the correct AutoSky configuration file.
++# ==============================================================================
++
++script_dir=$(dirname "$0")
++source "$script_dir/node_info.ini"
++Alert_ini="/usr/local/bin/AUTOSKY/AutoSky.ini"
++
++# The check_reg function has been removed
++
++CPUUP="Up "$(uptime -p | sed 's/^up //')
++
++CPULOAD=$(uptime)
++CPULOAD=$(echo $CPULOAD | sed -n -e 's/^.*\(load average:\)/\1/p')
++CPULOAD="\"$CPULOAD\""
++
++CPUTEMPDSP=""
++if [ -x /usr/local/sbin/cpu-temp ]; then
++    CPUT_INFO=$("/usr/local/sbin/cpu-temp")
++    if [[ -n "$CPUT_INFO" ]]; then
++        TEMP_C=$(echo "$CPUT_INFO" | awk '{print $3}')
++        TEMP_F=$(echo "$CPUT_INFO" | awk -F'[()]' '{print $2}')
++        TEMP_UNIT_UPPER=$(echo "$TEMP_UNIT" | tr '[:lower:]' '[:upper:]')
++        CPUTEMP_VALUE=""
++        CPUTEMP_DISPLAY=""
++        TEMP_INT=""
++        if [[ "$TEMP_UNIT_UPPER" == "C" ]]; then
++            CPUTEMP_VALUE=$(echo "$TEMP_C" | sed 's/ C//')
++            TEMP_INT=$(echo "$CPUTEMP_VALUE" | cut -d'.' -f1)
++            CPUTEMP_DISPLAY="${TEMP_INT} C"
++        elif [[ "$TEMP_UNIT_UPPER" == "F" ]]; then
++            CPUTEMP_VALUE=$(echo "$TEMP_F" | sed 's/ F//')
++            TEMP_INT=$(echo "$CPUTEMP_VALUE" | cut -d'.' -f1)
++            CPUTEMP_DISPLAY="${TEMP_INT} F"
++        else
++            CPUTEMP_DISPLAY="Temp Unit Invalid in config"
++        fi
++        if [[ -n "$TEMP_INT" ]] && [[ "$TEMP_INT" =~ ^[0-9]+$ ]]; then
++            if [[ "$TEMP_UNIT_UPPER" == "C" ]]; then
++                if [[ "$TEMP_INT" -le "50" ]]; then
++                    CPUTEMPDSP="\"<span style='background-color:lightgreen;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++                elif [[ "$TEMP_INT" -le "60" ]]; then
++                    CPUTEMPDSP="\"<span style='background-color:yellow;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++                else
++                    CPUTEMPDSP="\"<span style='background-color:#fa4c2d;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++                fi
++            elif [[ "$TEMP_UNIT_UPPER" == "F" ]]; then
++                if [[ "$TEMP_INT" -le "140" ]]; then
++                    CPUTEMPDSP="\"<span style='background-color:lightgreen;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++                elif [[ "$TEMP_INT" -le "158" ]]; then
++                    CPUTEMPDSP="\"<span style='background-color:yellow;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++                else
++                    CPUTEMPDSP="\"<span style='background-color:#fa4c2d;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++                fi
++            fi
++        else
++            CPUTEMPDSP="\"<span style='color:red;'><b>${CPUTEMP_DISPLAY} (Invalid Value)</b></span>\""
++        fi
++    else
++        CPUTEMPDSP="\"CPU Temp N/A\""
++    fi
++elif [ -r /sys/class/thermal/thermal_zone0/temp ]; then
++    TEMP_RAW=$(cat /sys/class/thermal/thermal_zone0/temp)
++    # Assuming the value is in milli-degrees Celsius
++    TEMP_C_RAW=$((TEMP_RAW / 1000))
++    TEMP_F_RAW=$(((TEMP_C_RAW * 9) / 5 + 32))
++    TEMP_UNIT_UPPER=$(echo "$TEMP_UNIT" | tr '[:lower:]' '[:upper:]')
++    CPUTEMP_VALUE=""
++    CPUTEMP_DISPLAY=""
++    TEMP_INT=""
++    if [[ "$TEMP_UNIT_UPPER" == "C" ]]; then
++        CPUTEMP_VALUE="$TEMP_C_RAW"
++        TEMP_INT="$TEMP_C_RAW"
++        CPUTEMP_DISPLAY="${TEMP_INT} C"
++    elif [[ "$TEMP_UNIT_UPPER" == "F" ]]; then
++        CPUTEMP_VALUE="$TEMP_F_RAW"
++        TEMP_INT="$TEMP_F_RAW"
++        CPUTEMP_DISPLAY="${TEMP_INT} F"
++    else
++        CPUTEMP_DISPLAY="Temp Unit Invalid in config"
++    fi
++    if [[ -n "$TEMP_INT" ]] && [[ "$TEMP_INT" =~ ^[0-9]+$ ]]; then
++        if [[ "$TEMP_UNIT_UPPER" == "C" ]]; then
++            if [[ "$TEMP_INT" -le "50" ]]; then
++                CPUTEMPDSP="\"<span style='background-color:lightgreen;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++            elif [[ "$TEMP_INT" -le "60" ]]; then
++                CPUTEMPDSP="\"<span style='background-color:yellow;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++            else
++                CPUTEMPDSP="\"<span style='background-color:#fa4c2d;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++            fi
++        elif [[ "$TEMP_UNIT_UPPER" == "F" ]]; then
++            if [[ "$TEMP_INT" -le "140" ]]; then
++                CPUTEMPDSP="\"<span style='background-color:lightgreen;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++            elif [[ "$TEMP_INT" -le "158" ]]; then
++                CPUTEMPDSP="\"<span style='background-color:yellow;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++            else
++                CPUTEMPDSP="\"<span style='background-color:#fa4c2d;'><b>${CPUTEMP_DISPLAY}</b></span>\""
++            fi
++        fi
++    else
++        CPUTEMPDSP="\"<span style='color:red;'><b>${CPUTEMP_DISPLAY} (Invalid Value)</b></span>\""
++    fi
++else
++    CPUTEMPDSP="\"CPU Temp N/A\""
++fi
++
++WX=""
++if [ -z "$WX_CODE" ] || [ -z "$WX_LOCATION" ]
++    then
++    WX="\" \""
++elif [ -x /usr/local/sbin/weather.pl ]; then
++    WX_RAW=$(/usr/local/sbin/weather.pl "$WX_CODE" v)
++    WX="\"<b>$WX_LOCATION &nbsp; ($WX_RAW)</b>\""
++elif [ -x /usr/local/sbin/weather.sh ]; then
++    WX_RAW=$(/usr/local/sbin/weather.sh "$WX_CODE" v)
++    WX="\"<b>$WX_LOCATION &nbsp; ($WX_RAW)</b>\""
++else
++    WX="\" \""
++fi
++
++logsz=$(df -h /var/log)
++sz=$(echo "$logsz" | awk 'FNR == 2 { print $4 }')
++pc=$(echo "$logsz" | awk 'FNR == 2 { print $5 }')
++us=$(echo "$logsz" | awk 'FNR == 2 { print $3 }')
++LOGS=$(echo -e "\"Logs - $us $pc used, $sz remains\"")
++
++if [ -e /tmp/AUTOSKY/warnings.txt ]
++    then
++    ALERTURL=$(grep "^OFILE=" "$Alert_ini" | sed 's/OFILE=//' | sed "s/\&y=0/\&y=1/" | sed 's/"//g')
++    ALERTURL="<a target='WX ALERT' href=$ALERTURL>"
++    ALERT=$(cat /tmp/AUTOSKY/warnings.txt)
++        if [ "$ALERT" == "" ]
++        then
++            ALERT="$ALERTURL <span style='color: red;'><b>No Alerts</b></span></a>"
++    else
++            ALERT="<span style='color: red;'><b>$ALERT</b></span></a>"
++            ALERT="$ALERTURL $(echo "$ALERT" | tr -d "\n\r]" | sed 's/\[//' | sed 's/ \[/,/g')"
++    fi
++    ALERT="\"$ALERT\""
++else
++    ALERT="\" \""
++fi
++
++for Ni in $NODE
++do
++    if [[ ! -z "$Ni" ]]
++        then
++        grep -q "[[:blank:]]*\[$Ni\]" /etc/asterisk/rpt.conf
++        if [[ "$?" == "0" ]]
++            then
++            # The REGISTRATIONS variable is no longer set
++            /usr/sbin/asterisk -rx "rpt set variable $Ni cpu_up=\"${CPUUP}\" cpu_load=${CPULOAD} cpu_temp=${CPUTEMPDSP} WX=${WX} LOGS=${LOGS}"
++            sleep 1
++            /usr/sbin/asterisk -rx "rpt set variable $Ni ALERT=${ALERT}"
++            echo  "Updated Variables Node $Ni using rpt set variable"
++        else
++            echo "Invalid Node $Ni this server"
++        fi
++    fi
++done
++
++exit
+\ No newline at end of file
+diff --git a/usr/local/sbin/node_info.ini b/usr/local/sbin/node_info.ini
+new file mode 100644
+index 0000000..6486816
+--- /dev/null
++++ b/usr/local/sbin/node_info.ini
+@@ -0,0 +1,42 @@
++#!/bin/bash
++
++# Initialazation script for Allstar variables
++#
++# Alerts are displayed if AutoSky is setup on your server.
++# See AutoSky howto.
++
++# **NODE**: List of Allstar nodes to be managed or updated on this server.
++#          - Nodes should be listed within double quotes.
++#          - Separate multiple node numbers with spaces.
++#          - Example: NODE="40000 40001"
++
++NODE=""
++
++# **WX_CODE**: Weather code for retrieving weather information.
++#            - Must be enclosed in double quotes.
++#            - Can be a US Zip code (e.g., "77511").
++#            - Can be an Airport code (e.g., "KIAH").
++#            - Can be a Weather Underground code (prefixed with "w-", e.g., "w-us-tx-houston-kiah").
++#            - This code is used by weather scripts (like `weather.pl`) to fetch data.
++#            - If you do not want to display weather, set this variable to an empty string: WX_CODE="".
++
++WX_CODE="77511"
++
++# **WX_LOCATION**: Text description of your weather location.
++#                - Must be enclosed in double quotes.
++#                - This description is typically displayed along with the weather information.
++#                - Should correspond to the location of the WX_CODE.
++#                - Example: WX_LOCATION="Alvin, Tx"
++#                - If you do not want to display weather, set this variable to an empty string: WX_LOCATION="".
++
++WX_LOCATION="Alvin, Tx"
++
++# **TEMP_UNIT**: Unit for displaying temperature.
++#              - Valid options are:
++#                - "F" for Fahrenheit
++#                - "C" for Celsius
++#              - This variable controls the temperature unit used in weather displays.
++
++TEMP_UNIT=F
++
++# End init
+diff --git a/var/www/html/supermon/link.php b/var/www/html/supermon/link.php
+index 58ad706..7c45985 100644
+--- a/var/www/html/supermon/link.php
++++ b/var/www/html/supermon/link.php
+@@ -136,19 +136,49 @@ $(document).ready(function() {
+ 			tx_keyed = 1;
+ 
+ 	}
+-        
+-        if (cos_keyed == 0) { 
+-                if (tx_keyed == 0)
+-                        tablehtml += '<tr class="gColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="1" align="center">Idle</td><td colspan="5"></td></tr>';
+-                else
+-                        tablehtml += '<tr class="tColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="1" align="center">PTT-Keyed</td><td colspan="5"></td></tr>';
+-        }
+-        else {
+-                if (tx_keyed == 0)
+-                        tablehtml += '<tr class="lColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="1" align="center">COS-Detected</td><td colspan="5"></td></tr>';
+-                else
+-                        tablehtml += '<tr class="bColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="2" align="center">COS-Detected and PTT-Keyed (Full-Duplex)</td><td colspan="4"></td></tr>';
+-        }
++	
++		// WA3DSP - 12/2020
++	var cpu_temp=tabledata[localNode].remote_nodes[row].cpu_temp;
++
++	if (!cpu_temp) {
++
++	        if (cos_keyed == 0) { 
++        	        if (tx_keyed == 0)
++                	        tablehtml += '<tr class="gColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="1" align="center"><b>Idle</b></td><td colspan="5"></td></tr>';
++                	else
++                        	tablehtml += '<tr class="tColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="1" align="center"><b>PTT-Keyed</b></td><td colspan="5"></td></tr>';
++        	} else {
++                	if (tx_keyed == 0)
++                        	tablehtml += '<tr class="lColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="1" align="center"><b>COS-Detected</b></td><td colspan="5"></td></tr>';
++                	else
++                        	tablehtml += '<tr class="bColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="2" align="center"><b>COS-Detected and PTT-Keyed (Full-Duplex)</b></td><td colspan="4"></td></tr>';
++        	}
++
++	} else {
++
++        	if (cos_keyed == 0) { 
++                	if (tx_keyed == 0)
++
++			        tablehtml += '<tr class="gColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="1" align="center"><b>Idle<br>'+tabledata[localNode].remote_nodes[row].ALERT + '<br>' + tabledata[localNode].remote_nodes[row].WX + '</b><br>CPU='+tabledata[localNode].remote_nodes[row].cpu_temp + ' - ' + tabledata[localNode].remote_nodes[row].cpu_up + '<br>' + tabledata[localNode].remote_nodes[row].cpu_load + '<br>' + tabledata[localNode].remote_nodes[row].LOGS + '</td><td colspan="5"></td></tr>';
++        	else
++
++tablehtml += '<tr class="tColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="1" align="center"><b>PTT-KEYED<br>'+tabledata[localNode].remote_nodes[row].ALERT + '<br>' + tabledata[localNode].remote_nodes[row].WX + '</b><br>CPU='+tabledata[localNode].remote_nodes[row].cpu_temp + ' - ' + tabledata[localNode].remote_nodes[row].cpu_up + '<br>' + tabledata[localNode].remote_nodes[row].cpu_load + '<br>' + tabledata[localNode].remote_nodes[row].LOGS + '</td><td colspan="5"></td></tr>';
++
++
++        	} else {
++                	if (tx_keyed == 0)
++
++tablehtml += '<tr class="lColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="1" align="center"><b>COS-DETECTED<br>'+tabledata[localNode].remote_nodes[row].ALERT + '<br>' + tabledata[localNode].remote_nodes[row].WX + '</b><br>CPU='+tabledata[localNode].remote_nodes[row].cpu_temp + ' - ' + tabledata[localNode].remote_nodes[row].cpu_up + '<br>' + tabledata[localNode].remote_nodes[row].cpu_load + '<br>' + tabledata[localNode].remote_nodes[row].LOGS + '</td><td colspan="5"></td></tr>';
++
++
++                	else
++
++tablehtml += '<tr class="bColor"><td colspan="1" align="center">' + localNode + '</td><td colspan="1" align="center"><b>COS-Detected and PTT-Keyed (Full Duplex)<br>'+tabledata[localNode].remote_nodes[row].ALERT + '<br>' + tabledata[localNode].remote_nodes[row].WX + '</b><br>CPU='+tabledata[localNode].remote_nodes[row].cpu_temp + ' - ' + tabledata[localNode].remote_nodes[row].cpu_up + '<br>' + tabledata[localNode].remote_nodes[row].cpu_load + '<br>' + tabledata[localNode].remote_nodes[row].LOGS + '</td><td colspan="5"></td></tr>';
++
++        	}
++}
++
++// END WA3DSP - 12/2020
+ 
+ 	for (row in tabledata[localNode].remote_nodes) {
+ 
+@@ -405,7 +435,7 @@ if ($myip == $mylanip) {
+ }
+ } #endif (count($nodes) > 0)
+ print "<br>";
+-print "[ $myday - $uptime ]";
++print "[ $myday ]";
+ 
+ ?>
+ </div>
+@@ -430,12 +460,6 @@ if (isset($DVM_URL) && isset($DVM_URL_NAME)) {
+ }
+ // END KN2R
+ 
+-// ADDED KN2R - CPU temp indicator for RPi only - irrelevant for PC Cloud
+-if (file_exists("/sys/class/thermal/thermal_zone0/temp")) {
+-    $CPUTemp = exec("/usr/local/sbin/supermon/get_temp");
+-    print " &nbsp; [ $CPUTemp]";
+-}
+-
+ // ADDED KN2R - 11/7/2018 - Core dump file indicator
+ if (isset($SHOW_COREDUMPS) && ($SHOW_COREDUMPS == 'yes')) {
+     $Cores = `ls /var/lib/systemd/coredump |wc -w`;
+@@ -465,20 +489,6 @@ print "</p>";
+ 
+ // END KN2R
+ 
+-// Added WA3DSP Weather conditions
+-if (isset($LOCALZIP)) {
+-    $WX = exec("/usr/local/sbin/supermon/weather.sh $LOCALZIP v");
+-    print "<p style=\"margin-top:0px;\">[ Weather conditions for $LOCATION - $LOCALZIP: ";
+-    print "<span style=\"margin-top:0px; font-weight: bold; background-color: GAINSBORO;\">&nbsp;$WX&nbsp;</span> ]";
+-}
+-
+-if (file_exists("/var/www/html/AUTOSKY/warnings.txt")) {
+-    if (filesize("/var/www/html/AUTOSKY/warnings.txt")) {
+-        $warnings = file_get_contents ("/var/www/html/AUTOSKY/warnings.txt");
+-        print "<span style=\"color: red;\"><br><b>$warnings</b></span>";
+-    }
+-}
+-
+ print "</p>";
+ 
+ #print '<pre>'; print_r($nodes); print '</pre>';
+diff --git a/var/www/html/supermon/server.php b/var/www/html/supermon/server.php
+index 3f6b5d5..4b6769b 100644
+--- a/var/www/html/supermon/server.php
++++ b/var/www/html/supermon/server.php
+@@ -148,27 +148,34 @@ while(TRUE) {
+             $current[$node]['remote_nodes'][$i]['mode']=$arr['mode'];
+             $current[$node]['remote_nodes'][$i]['elapsed'] = '&nbsp;';
+ 
++            // WA3DSP
++            // Change to return "Never" so test can be made in link.php
+ 
+-// WA3DSP
+-// Change to return "Never" so test can be made in link.php
++            if ( $arr['last_keyed'] == "Never" ) {
++                 $current[$node]['remote_nodes'][$i]['last_keyed'] = 'Never';
++            } else {   
++                 $current[$node]['remote_nodes'][$i]['last_keyed'] = '&nbsp';
++            }
+ 
+-      if ( $arr['last_keyed'] == "Never" ) {
+-           $current[$node]['remote_nodes'][$i]['last_keyed'] = 'Never';
+-      } else {   
+-           $current[$node]['remote_nodes'][$i]['last_keyed'] = '&nbsp';
+-      }
++            // WA3DSP 3/2018    
++            // Change to add local RXKEYED COS display
++            $current[$node]['remote_nodes'][$i]['cos_keyed']=$arr['cos_keyed'];
++            $current[$node]['remote_nodes'][$i]['info']=$arr['info'];
++            $current[$node]['remote_nodes'][$i]['node']=$arr['node'];
++            // END
+ 
+-// WA3DSP 3/2018    
+-// Change to add local RXKEYED COS display
+-$current[$node]['remote_nodes'][$i]['cos_keyed']=$arr['cos_keyed'];
+-$current[$node]['remote_nodes'][$i]['info']=$arr['info'];
+-$current[$node]['remote_nodes'][$i]['node']=$arr['node'];
+-// END
++            // ADDED KN2R 9/2018
++            // Change to add local TXKEYED PTT display
++            $current[$node]['remote_nodes'][$i]['tx_keyed']=$arr['tx_keyed'];
++            // END KN2R
+ 
+-// ADDED KN2R 9/2018
+-// Change to add local TXKEYED PTT display
+-$current[$node]['remote_nodes'][$i]['tx_keyed']=$arr['tx_keyed'];
+-// END KN2R
++            // WA3DSP 12/2020  1/3/2021
++            $current[$node]['remote_nodes'][$i]['cpu_temp']=$arr['cpu_temp'];
++            $current[$node]['remote_nodes'][$i]['cpu_up']=$arr['cpu_up'];
++            $current[$node]['remote_nodes'][$i]['cpu_load']=$arr['cpu_load'];
++            $current[$node]['remote_nodes'][$i]['ALERT']=$arr['ALERT'];
++            $current[$node]['remote_nodes'][$i]['WX']=$arr['WX'];
++            $current[$node]['remote_nodes'][$i]['LOGS']=$arr['LOGS'];
+ 
+         $i++;
+         }
+@@ -325,9 +332,36 @@ function parseNode($fp, $rptStatus, $sawStatus) {
+ // ADDED KN2R 9/2018
+ 	if (preg_match('/Var: RPT_TXKEYED=./', $line, $matches)) {
+            $txKeyed=substr($matches[0], strpos($matches[0], "=") + 1);
+-        }
++    }
+ // END KN2R
+ 
++// WA3DSP 12/2020  1/3/2021
++    if (preg_match('/Var: cpu_temp=.*/', $line, $matches)) {
++                   $cputemp=substr($matches[0], strpos($matches[0], "=") + 1);
++    }
++
++    if (preg_match('/Var: cpu_up=.*/', $line, $matches)) {
++                   $cpuup=substr($matches[0], strpos($matches[0], "=") + 1);
++    }
++
++    if (preg_match('/Var: cpu_load=.*/', $line, $matches)) {
++                  $cpuload=substr($matches[0], strpos($matches[0], "=") + 1);
++    }
++
++    if (preg_match('/Var: ALERT=.*/', $line, $matches)) {
++                   $ALERT=substr($matches[0], strpos($matches[0], "=") + 1);
++    }
++
++    if (preg_match('/Var: WX=.*/', $line, $matches)) {
++                   $WX=substr($matches[0], strpos($matches[0], "=") + 1);
++    }
++
++    if (preg_match('/Var: LOGS=.*/', $line, $matches)) {
++                   $LOGS=substr($matches[0], strpos($matches[0], "=") + 1);
++    }
++
++// END WA3DSP
++
+     }
+ 
+     #print "<pre>Conns: \n"; print_r($conns); print "</pre>";
+@@ -364,6 +398,14 @@ function parseNode($fp, $rptStatus, $sawStatus) {
+             $curNodes[$n]['direction'] = $node[3];
+             $curNodes[$n]['elapsed'] = $node[4];
+             $curNodes[$n]['link'] = @$node[5];
++            
++            // WA3DSP 12/2020   1/3/2021
++	        $curNodes[$n]['cpu_temp'] = $cputemp;
++	        $curNodes[$n]['cpu_up'] = $cpuup;
++	        $curNodes[$n]['cpu_load'] = $cpuload;
++	        $curNodes[$n]['ALERT'] = $ALERT;
++	        $curNodes[$n]['WX'] = $WX;
++	        $curNodes[$n]['LOGS'] = $LOGS;
+ 
+             ## Fix for table display bug of IRLP nodes - Paul Aidukas, KN2R ;)
+             #
+@@ -425,6 +467,16 @@ if ($txKeyed === "1") {
+ }
+ // END KN2R
+ 
++// WA3DSP 12/2020  1/3/2021
++$curNodes[1]['cpu_temp'] = $cputemp;
++$curNodes[1]['cpu_up'] = $cpuup;
++$curNodes[1]['cpu_load'] = $cpuload;
++$curNodes[1]['ALERT'] = $ALERT;
++$curNodes[1]['WX'] = $WX;
++$curNodes[1]['LOGS'] = $LOGS;
++$curNodes[1]['REGISTRATIONS'] = $REGISTRATIONS;
++// END WA3DSP
++
+     return $curNodes;
+ }
+ ?>
+-- 
+2.49.0
+
