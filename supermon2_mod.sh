@@ -8,7 +8,7 @@
 # Patch URL: http://w5gle.us/~anarchy/tools/supermon-mode-variables-v2.patch
 
 # Define variables
-PATCH_URL="http://198.58.124.150/scripts/supermon2/supermon-mode-variables.patch"
+PATCH_URL="https://raw.githubusercontent.com/KD5FMU/Supermon2-Mod-for-Supermon-7.4/refs/heads/main/supermon-mode-variables.patch"
 INI_FILE="/usr/local/sbin/node_info.ini"
 CRONTAB_ENTRY="*/3 * * * * /usr/local/sbin/ast_node_status_update.py # Update variables every 3 minutes for supermon"
 PATCH_FILE="supermon.patch"
