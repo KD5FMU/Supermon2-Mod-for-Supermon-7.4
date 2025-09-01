@@ -41,10 +41,15 @@ sudo ./supermon2_mod.sh
   <img src="https://img.shields.io/badge/Donate-CashApp-00C244?style=for-the-badge&logo=cashapp&logoColor=white" />
 </a>
 
+<!-- Zelle uses email/phone inside your bank app; no public pay URL exists. -->
+<a href="mailto:geekypenguin@gmail.com?subject=Zelle%20Donation%20for%20Jory%20Pratt%20-%20W5GLE&body=I%27d%20like%20to%20send%20a%20Zelle%20donation.">
+  <img src="https://img.shields.io/badge/Donate%20via-Zelle-6D1E72?style=for-the-badge&logo=zelle&logoColor=white" />
+</a>
 
-[W5GLE - CashAPP](https://cash.app/$anarchpeng)
+**Send via Zelle to:** `geekypenguin@gmail.com` (Jory Pratt – W5GLE)
 
-W5GLE - ZELLE App - Use geekypenguin@gmail.com
+
+
 
 <a href="https://www.youtube.com/@HamRadioCrusader" target="_blank">
   <img src="https://img.shields.io/badge/Subscribe-Ham%20Radio%20Crusader-red?style=for-the-badge&logo=youtube" />
