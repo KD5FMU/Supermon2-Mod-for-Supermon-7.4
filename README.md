@@ -20,7 +20,7 @@ sudo wget https://raw.githubusercontent.com/KD5FMU/Supermon2-Mod-for-Supermon-7.
 
 ⭐️ Step 3 - Then we need to make the file executable
 ```
-sudo chmod +x suermon2_mod.sh
+sudo chmod +x supermon2_mod.sh
 ```
 
 ⭐️ Step 4 - Then we can execute the script installer
