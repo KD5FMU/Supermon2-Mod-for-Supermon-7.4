@@ -33,6 +33,11 @@ sudo ./supermon2_mod.sh
 
 👉 If you want to help Jory out with his efforts on making things better for all of us then please consider makeing a donation to his efforts.🇺🇸
 ---
+<a href="https://www.paypal.com/donate?token=IyATJ7p91vnH0tLglypNy2DxIZ3G2VmpWddIzltxRzY4kpcF0hPRHPj7F9ipe3YvfujL-1een4QH5Te5" target="_blank">
+  <img src="https://img.shields.io/badge/Donate%20with-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" />
+</a>
+
+
 [W5GLE - PayPal](https://www.paypal.com/donate?token=IyATJ7p91vnH0tLglypNy2DxIZ3G2VmpWddIzltxRzY4kpcF0hPRHPj7F9ipe3YvfujL-1een4QH5Te5)
 
 [W5GLE - CashAPP](https://cash.app/$anarchpeng)
