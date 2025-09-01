@@ -2,7 +2,7 @@
 ### ⚠️ WARNING - DO NOT USE IF YOU HAVE SUPERMON-NG INSTALLED ⚠️ ###
 
 ***Weather Info In Node Tables Modification***
-### These instructions are still under construction so proceed at your own risk ###
+### ⚠️⚠️ These instructions are still under construction so proceed at your own risk ⚠️⚠️ ###
 This is the weather node table update for Supermon 7.4 like you see in the Supermon2 Node Tables
 ![Supermon2-Mod Logo](https://github.com/KD5FMU/Supermon2-Mod-for-Supermon-7.4/blob/main/supermon2-mod-a.png)
 
