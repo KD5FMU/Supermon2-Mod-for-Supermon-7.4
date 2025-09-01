@@ -39,3 +39,7 @@ sudo ./supermon2_mod.sh
 
 W5GLE - ZELLE App - Use geekypenguin@gmail.com
 
+<a href="https://www.youtube.com/@HamRadioCrusader" target="_blank">
+  <img src="https://img.shields.io/badge/Subscribe-Ham%20Radio%20Crusader-red?style=for-the-badge&logo=youtube" />
+</a>
+
