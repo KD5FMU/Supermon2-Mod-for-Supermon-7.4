@@ -5,7 +5,7 @@
 #
 # Copyright (c) 2025 Jory A. Pratt, W5GLE
 #
-# Patch URL: http://w5gle.us/~anarchy/tools/supermon-mode-variables-v2.patch
+# Patch URL: https://raw.githubusercontent.com/KD5FMU/Supermon2-Mod-for-Supermon-7.4/refs/heads/main/supermon-mode-variables-v2.patch
 
 # Define variables
 PATCH_URL="https://raw.githubusercontent.com/KD5FMU/Supermon2-Mod-for-Supermon-7.4/refs/heads/main/supermon-mode-variables-v2.patch"
