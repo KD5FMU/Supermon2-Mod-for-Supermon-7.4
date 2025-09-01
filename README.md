@@ -37,8 +37,10 @@ sudo ./supermon2_mod.sh
   <img src="https://img.shields.io/badge/Donate%20with-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" />
 </a>
 
+<a href="https://cash.app/$anarchpeng" target="_blank">
+  <img src="https://img.shields.io/badge/Donate-CashApp-00C244?style=for-the-badge&logo=cashapp&logoColor=white" />
+</a>
 
-[W5GLE - PayPal](https://www.paypal.com/donate?token=IyATJ7p91vnH0tLglypNy2DxIZ3G2VmpWddIzltxRzY4kpcF0hPRHPj7F9ipe3YvfujL-1een4QH5Te5)
 
 [W5GLE - CashAPP](https://cash.app/$anarchpeng)
 
