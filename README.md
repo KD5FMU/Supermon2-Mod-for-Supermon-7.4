@@ -5,6 +5,7 @@
 ### These instructions are still under construction so proceed at your own risk ###
 This is the weather node table update for Supermon 7.4 like you see in the Supermon2 Node Tables
 
+
 Here is how to install it
 
 ⭐️ Step 1 - Lets go to the Home directory
