@@ -1,4 +1,4 @@
-#### Supermon2 modification to Supermon 7.4 ####
+## Supermon2 modification to Supermon 7.4 ##
 ⚠️ ** WARNING - DO NOT USE IF YOU HAVE SUPERMON-NG INSTALLED ** ⚠️
 
 ***Weather Info In Node Tables Modification***
