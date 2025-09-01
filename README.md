@@ -32,6 +32,7 @@ sudo ./supermon2_mod.sh
 🇺🇸 Once the file begins it will stop and open the node_info.ini file for you modify to your own settings
 
 If you want to help Jory out with his efforts on making things better for all of us then please consider makeing a donation to the cause.
+---
 [W5GLE - PayPal](https://www.paypal.com/donate?token=IyATJ7p91vnH0tLglypNy2DxIZ3G2VmpWddIzltxRzY4kpcF0hPRHPj7F9ipe3YvfujL-1een4QH5Te5)
 
 [W5GLE - CashAPP](https://cash.app/$anarchpeng)
