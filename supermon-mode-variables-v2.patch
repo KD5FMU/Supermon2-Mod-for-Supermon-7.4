@@ -161,7 +161,7 @@ index 0000000..2446cf1
 +def get_autosky_alerts(alert_ini, warnings_file, master_enable):
 +    """Retrieves active weather alerts from AutoSky/SkywarnPlus, if configured."""
 +    github_link = '<a href=\'https://github.com/mason10198/SkywarnPlus\' style=\'color: inherit; text-decoration: none;\'>SkywarnPlus</a>'
-+    enabled_text = f'<span style=\'color: SpringGreen;\'><b><u>{github_link} Enabled</u></b></span>'
++    enabled_text = f'<span style=\'color: Green;\'><b><u>{github_link} Enabled</u></b></span>'
 +    disabled_text = f'<span style=\'color: darkorange;\'><b><u>{github_link} Disabled</u></b></span>'
 +
 +    if master_enable.lower() != "yes":
