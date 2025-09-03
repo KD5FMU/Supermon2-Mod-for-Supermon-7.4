@@ -32,6 +32,11 @@ sudo ./supermon2_mod.sh
 🇺🇸 Once the file begins it will stop and open the node_info.ini file for you modify to your own settings
 ![node_info.ini screenshot](https://github.com/KD5FMU/Supermon2-Mod-for-Supermon-7.4/blob/main/default-node-ini-settings.png)
 
+This is how my node_info.ini file looks configured
+![my node_info.ini file](https://github.com/KD5FMU/Supermon2-Mod-for-Supermon-7.4/blob/main/my-node-ini-settings.png)
+
+Just make your changes and hit CTL + X then Y to save and enter to exit.
+
 👉 If you want to help Jory out with his efforts on making things better for all of us then please consider makeing a donation to his efforts.🇺🇸
 ---
 <a href="https://www.paypal.com/donate?token=IyATJ7p91vnH0tLglypNy2DxIZ3G2VmpWddIzltxRzY4kpcF0hPRHPj7F9ipe3YvfujL-1een4QH5Te5" target="_blank">
