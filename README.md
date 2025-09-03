@@ -46,7 +46,11 @@ Here is what mine looks like
 
 ![AutoSky.ini fule change](https://github.com/KD5FMU/Supermon2-Mod-for-Supermon-7.4/blob/main/AutoSky-ini-my-settings.png)
 
-Just get to that line that us commented in and change the county code to your County Code
+Just get to that line that is commented in and change the county code to your County Code.
+
+Now you can goto your Supermon 7.4 page and refresh it after 3 mins and you should be good to go. 
+
+73!
 
 👉 If you want to help Jory out with his efforts on making things better for all of us then please consider makeing a donation to his efforts.🇺🇸
 ---
