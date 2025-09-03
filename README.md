@@ -2,7 +2,7 @@
 ### ⚠️ WARNING - DO NOT USE THIS PATCH IF YOU HAVE SUPERMON-NG INSTALLED ⚠️ ###
 
 ***Weather Info In Node Tables Modification***
-### ⚠️⚠️ These instructions are still under construction so proceed at your own risk ⚠️⚠️ ###
+
 This is the weather node table update for Supermon 7.4 like you see in the Supermon2 Node Tables. Created by Jory Pratt - W5GLE giving us a feature that is in the HamVoIP version of Supermon2 and now can be enjoyed on the ASL3 verison of Supermon 7.4. Please Join me in Thanking Jory for this awesome creation.
 
 ![Supermon2-Mod Logo](https://github.com/KD5FMU/Supermon2-Mod-for-Supermon-7.4/blob/main/supermon2-mod-a.png)
