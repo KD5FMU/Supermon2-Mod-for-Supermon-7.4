@@ -37,6 +37,12 @@ This is how my node_info.ini file looks configured
 
 Just make your changes and hit CTL + X then Y to save and enter to exit.
 
+So now we need to make a small change in the /usr/local/bin/AUTOSKY/AutoSky.ini file so that you can enter your county code
+
+![AutoSky.ini fule change](https://github.com/KD5FMU/Supermon2-Mod-for-Supermon-7.4/blob/main/AutoSky-ini-my-settings.png)
+
+Just get to that line that us commented in and change the county code to your County Code
+
 👉 If you want to help Jory out with his efforts on making things better for all of us then please consider makeing a donation to his efforts.🇺🇸
 ---
 <a href="https://www.paypal.com/donate?token=IyATJ7p91vnH0tLglypNy2DxIZ3G2VmpWddIzltxRzY4kpcF0hPRHPj7F9ipe3YvfujL-1een4QH5Te5" target="_blank">
